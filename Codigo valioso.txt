@@ -1,0 +1,22 @@
+def extract_gastos(text):
+    """
+    Extrae el gasto sumando:
+    - MINxxx → número después de MIN
+    - xxxMyyy → número después de M
+    Ignora cualquier otra cosa.
+    """
+    total = 0
+
+    # Normalizar texto OCR
+    text = text.upper()
+    text = re.sub(r'\s+', ' ', text)
+
+    #1️⃣ Todos los MINxxx
+    min_matches = re.findall(r'MIN\s*(\d+)', text)
+    total += sum(int(m) for m in min_matches)
+
+    # 2️⃣ Todos los xxxMyyy
+    m_matches = re.findall(r'\d+M(\d+)', text)
+    total += sum(int(m) for m in m_matches)
+
+    return total
