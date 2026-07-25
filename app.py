@@ -15,14 +15,14 @@ app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 @app.route("/", methods=["GET", "POST"])
 def index():
 
-    result = None
+    clientes = None
 
     if request.method == "POST":
 
         if "pdf" not in request.files:
             return render_template(
                 "index.html",
-                result=None,
+                clientes=None,
                 error="No se seleccionó ningún archivo."
             )
 
@@ -31,14 +31,14 @@ def index():
         if file.filename == "":
             return render_template(
                 "index.html",
-                result=None,
+                clientes=None,
                 error="Seleccione un PDF."
             )
 
         if not file.filename.lower().endswith(".pdf"):
             return render_template(
                 "index.html",
-                result=None,
+                clientes=None,
                 error="Solo se permiten archivos PDF."
             )
 
@@ -53,19 +53,19 @@ def index():
 
         try:
 
-            result = process_pdf(pdf_path)
+            clientes = process_pdf(pdf_path)
 
         except Exception as e:
 
             return render_template(
                 "index.html",
-                result=None,
+                clientes=None,
                 error=str(e)
-            )
+        )
 
     return render_template(
         "index.html",
-        result=result
+        clientes=clientes
     )
 
 
