@@ -54,14 +54,19 @@ def index():
         try:
 
             clientes = process_pdf(pdf_path)
-
+        
         except Exception as e:
-
+        
             return render_template(
                 "index.html",
                 clientes=None,
                 error=str(e)
-        )
+            )
+
+        finally:
+            # Elimina el PDF del servidor, ocurra o no un error
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
 
     return render_template(
         "index.html",
