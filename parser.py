@@ -61,6 +61,26 @@ def extract_score(text):
 
     return 0
 
+# ============================================
+# NIVEL DE RIESGO
+# ============================================
+
+def extract_riesgo(score):
+
+    if score >= 800:
+        return "Excelente"
+
+    elif score >= 740:
+        return "Muy Bueno"
+
+    elif score >= 670:
+        return "Bueno"
+
+    elif score >= 580:
+        return "Medio"
+
+    else:
+        return "Alto"
 
 # ============================================
 # EXTRAER GASTOS MENSUALES
@@ -77,6 +97,12 @@ def extract_gastos(text):
     for cuenta in cuentas:
 
         cuenta_mayus = cuenta.upper()
+
+        # Si el campo Closed: tiene una fecha,
+        # la cuenta ya no genera gasto mensual
+        # ============================================
+        if re.search(r"CLOSED:\s*\d{1,2}/\d{2}", cuenta_mayus):
+            continue
 
         # Ignorar cuentas cerradas
         if (
@@ -132,6 +158,308 @@ def extract_gastos(text):
     return total
 
 # ============================================
+# CONTAR CUENTAS ABIERTAS
+# ============================================
+
+def extract_open_accounts(text):
+
+    total = 0
+
+    cuentas = re.split(
+        r'(?=[A-Z0-9/&.,\'\- ]+\s+\([A-Z]\s+[A-Z0-9]+\)\s+Account #)',
+        text
+    )
+
+    for cuenta in cuentas:
+
+        cuenta_mayus = cuenta.upper()
+
+        # Debe contener una cuenta
+        if "ACCOUNT #" not in cuenta_mayus:
+            continue
+
+            # Ignorar Collections
+        if (
+            "TYPE: COLLECTION" in cuenta_mayus
+            or "LOAN TYPE: COLLECTION" in cuenta_mayus
+            or "ACCOUNT TYPE: OPEN" in cuenta_mayus
+            or "ORIGINAL CREDITOR:" in cuenta_mayus
+            or "AMOUNT PLACED:" in cuenta_mayus
+        ):
+            continue
+
+        # Ignorar cuentas cerradas
+        if (
+            "CLOSED BY CREDIT GRANTOR" in cuenta_mayus
+            or "ACCOUNT CLOSED DUE TO REFINANCE" in cuenta_mayus
+            or "ACCOUNT CLOSED DUE TO TRANSFER" in cuenta_mayus
+            or "ACCOUNT CLOSED BY CONSUMER" in cuenta_mayus
+            or "TRANSFERRED TO ANOTHER LENDER" in cuenta_mayus
+            or "PAID IN FULL" in cuenta_mayus
+            or "INACTIVE ACCOUNT" in cuenta_mayus
+            or "PURCHASED BY ANOTHER LENDER" in cuenta_mayus
+            or "UNPAID BALANCE CHARGED OFF" in cuenta_mayus
+            or re.search(r"REMARKS:\s*CLOSED\b", cuenta_mayus)
+            or re.search(r"CLOSED:\s*\d{1,2}/\d{2}", cuenta_mayus)
+        ):
+            continue
+
+        total += 1
+
+    return total
+
+# ============================================
+# CONTAR COLLECTIONS
+# ============================================
+
+def extract_collections(text):
+
+    total = 0
+
+    # ==========================================
+    # 1. Contar las cuentas dentro de COLLECTIONS
+    # ==========================================
+
+    match = re.search(
+        r'COLLECTIONS(.*?)(?:TRADES|INQUIRIES|PUBLIC RECORDS|$)',
+        text,
+        re.DOTALL | re.IGNORECASE
+    )
+
+    if match:
+
+        seccion = match.group(1)
+
+        total += len(re.findall(
+            r'ACCOUNT\s*#',
+            seccion,
+            re.IGNORECASE
+        ))
+
+    # ==========================================
+    # 2. Buscar COLLECTION fuera de esa sección
+    # ==========================================
+
+    cuentas = re.split(
+        r'(?=[A-Z0-9/&.,\'\- ]+\s+\([A-Z]\s+[A-Z0-9]+\)\s+Account #)',
+        text
+    )
+
+    for cuenta in cuentas:
+
+        cuenta_mayus = cuenta.upper()
+
+        if (
+            "TYPE: COLLECTION" in cuenta_mayus
+            or "LOAN TYPE: COLLECTION" in cuenta_mayus
+            or "REMARKS: COLLECTION" in cuenta_mayus
+        ):
+
+            # Si esta cuenta ya pertenece a la sección COLLECTIONS,
+            # no volver a contarla.
+            if "PLACED FOR COLLECTION" in cuenta_mayus:
+                continue
+
+            total += 1
+
+    return total
+
+
+# ============================================
+# CONTAR CHARGE OFFS
+# ============================================
+
+def extract_charge_offs(text):
+
+    total = 0
+
+    cuentas = re.split(
+        r'(?=[A-Z0-9/&.,\'\- ]+\s+\([A-Z]\s+[A-Z0-9]+\)\s+Account #)',
+        text
+    )
+
+    for cuenta in cuentas:
+
+        cuenta_mayus = cuenta.upper()
+
+        if "UNPAID BALANCE CHARGED OFF" in cuenta_mayus:
+            total += 1
+
+    return total
+
+
+# ============================================
+# CONTAR DISPUTAS
+# ============================================
+
+
+def extract_disputes(text):
+
+    total = 0
+
+    cuentas = re.split(
+        r'(?=[A-Z0-9/&.,\'\- ]+\s+\([A-Z]\s+[A-Z0-9]+\)\s+Account #)',
+        text
+    )
+
+    for cuenta in cuentas:
+
+        cuenta_mayus = cuenta.upper()
+
+        if (
+            "DISPUTE" in cuenta_mayus
+            or "ACCOUNT INFORMATION DISPUTED BY CONSUMER" in cuenta_mayus
+            or "CUSTOMER DISAGREES" in cuenta_mayus
+            or "DISPUTE INVESTIGATION COMPLETE" in cuenta_mayus
+        ):
+            total += 1
+
+    return total
+
+
+# ============================================
+# CONTAR INQUIRIES DEL AÑO ACTUAL
+# ============================================
+
+def extract_current_year_inquiries(text):
+
+    # Año del reporte
+    match = re.search(
+        r"RESULTS ISSUED:\s*\d{1,2}/\d{1,2}/(\d{2})",
+        text,
+        re.IGNORECASE
+    )
+
+    if not match:
+        return 0
+
+    anio_actual = match.group(1)
+
+    # Extraer solo la sección INQUIRIES
+    match = re.search(
+        r"INQUIRIES(.*)$",
+        text,
+        re.DOTALL | re.IGNORECASE
+    )
+
+    if not match:
+        return 0
+
+    seccion = match.group(1)
+
+    # Buscar fechas que correspondan a una fila de inquiry
+    fechas = re.findall(
+        r'(\d{1,2}/\d{1,2}/\d{2})\s+[A-Z]',
+        seccion
+    )
+
+    total = 0
+
+    for fecha in fechas:
+        if fecha.endswith("/" + anio_actual):
+            total += 1
+
+    return total
+
+# ============================================
+# Calcular riesgo
+# ============================================
+
+
+def calcular_riesgo(score, limite_credito, cuentas_abiertas,
+                    charge_offs, collections, disputas):
+
+    puntos = 0
+
+    if score >= 670:
+        puntos += 1
+
+    if limite_credito >= 9500:
+        puntos += 1
+
+    if cuentas_abiertas >= 3:
+        puntos += 1
+
+    if charge_offs <= 2:
+        puntos += 1
+
+    if collections <= 2:
+        puntos += 1
+
+    if disputas <= 2:
+        puntos += 1
+
+    if puntos == 6:
+        return "Bajo"
+
+    elif puntos >= 4:
+        return "Medio"
+
+    else:
+        return "Alto"
+
+
+# ============================================
+# EXTRAER LIMITE TOTAL DE CREDITO
+# ============================================
+
+def extract_credit_limit(text):
+
+    total = 0
+
+    cuentas = re.split(
+        r'(?=[A-Z0-9/&.,\'\- ]+\s+\([A-Z]\s+[A-Z0-9]+\)\s+Account #)',
+        text
+    )
+
+    for cuenta in cuentas:
+
+        cuenta_mayus = cuenta.upper()
+
+        # Ignorar Collections
+        if "ORIGINAL CREDITOR:" in cuenta_mayus:
+            continue
+
+        # Ignorar cuentas cerradas
+        if re.search(r'CLOSED:\s*\d{1,2}/\d{2,4}', cuenta_mayus):
+            continue
+
+        if (
+            "CLOSED BY CREDIT GRANTOR" in cuenta_mayus
+            or "ACCOUNT CLOSED DUE TO REFINANCE" in cuenta_mayus
+            or "ACCOUNT CLOSED DUE TO TRANSFER" in cuenta_mayus
+            or "ACCOUNT CLOSED BY CONSUMER" in cuenta_mayus
+            or "TRANSFERRED TO ANOTHER LENDER" in cuenta_mayus
+            or "PAID IN FULL" in cuenta_mayus
+            or "INACTIVE ACCOUNT" in cuenta_mayus
+            or "PURCHASED BY ANOTHER LENDER" in cuenta_mayus
+            or "UNPAID BALANCE CHARGED OFF" in cuenta_mayus
+        ):
+            continue
+
+        # Primero buscar Credit Limit
+        match = re.search(
+            r'CREDIT LIMIT:\s*\$?([\d,]+)',
+            cuenta,
+            re.IGNORECASE
+        )
+
+        # Si no existe Credit Limit, buscar High Credit
+        if not match:
+            match = re.search(
+                r'HIGH CREDIT:\s*\$?([\d,]+)',
+                cuenta,
+                re.IGNORECASE
+            )
+
+        if match:
+            limite = int(match.group(1).replace(",", ""))
+            total += limite
+
+    return total
+
+
+# ============================================
 # IDENTIFICADOR DE SEGUNDO CLIENTE
 # ============================================
 
@@ -167,13 +495,42 @@ def process_pdf(pdf_path):
 
     for cliente in clientes:
 
+        score = extract_score(cliente)
+
+        limite_credito = extract_credit_limit(cliente)
+        cuentas_abiertas = extract_open_accounts(cliente)
+        charge_offs = extract_charge_offs(cliente)
+        collections = extract_collections(cliente)
+        disputas = extract_disputes(cliente)
+
         resultados.append({
 
             "nombre": extract_name(cliente),
 
-            "score": extract_score(cliente),
+            "score": score,
 
-            "gastos": extract_gastos(cliente)
+            "riesgo": calcular_riesgo(
+                score,
+                limite_credito,
+                cuentas_abiertas,
+                charge_offs,
+                collections,
+                disputas
+            ),
+
+            "gastos": extract_gastos(cliente),
+
+            "limite_credito": limite_credito,
+
+            "cuentas_abiertas": extract_open_accounts(cliente),
+
+            "collections": extract_collections(cliente),
+
+            "charge_offs": extract_charge_offs(cliente),
+
+            "disputes": extract_disputes(cliente),
+
+            "inquiries": extract_current_year_inquiries(cliente)
 
         })
 
