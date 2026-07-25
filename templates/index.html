@@ -153,30 +153,44 @@
 
     {% endif %}
 
-    {% if result %}
+    
+     {% if clientes %}
 
-        <div class="result">
+    <div style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap; margin-top:25px;">
 
-            <h3>Resultado</h3>
+    {% for cliente in clientes %}
 
-            <p>
-                <b>Nombre completo:</b>
-                {{ result.nombre }}
-            </p>
+    <div class="result" style="flex:1; min-width:250px; max-width:280px;">
 
-            <p>
-                <b>Score:</b>
-                {{ result.score }}
-            </p>
-
-            <p>
-                <b>Gastos ($):</b>
-                {{ result.gastos }}
-            </p>
-
-        </div>
-
+    {% if loop.index == 1 %}
+        <h3>Aplicante</h3>
+    {% else %}
+        <h3>Coaplicante</h3>
     {% endif %}
+
+        <p>
+            <b>Nombre completo:</b><br>
+            {{ cliente.nombre }}
+        </p>
+
+        <p>
+            <b>Score:</b><br>
+            {{ cliente.score }}
+        </p>
+
+        <p>
+            <b>Gastos ($):</b><br>
+            {{ cliente.gastos }}
+        </p>
+
+    </div>
+
+    {% endfor %}
+
+    </div>
+
+    {% endif %} 
+    
 
     <footer>
 
