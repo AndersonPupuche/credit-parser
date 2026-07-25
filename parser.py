@@ -132,6 +132,28 @@ def extract_gastos(text):
     return total
 
 # ============================================
+# IDENTIFICADOR DE SEGUNDO CLIENTE
+# ============================================
+
+def separar_clientes(text):
+
+    marcador = "INPUT PARAMETERS FOR SECONDARY SUBJECT"
+
+    # Si no existe un segundo cliente
+    if marcador not in text:
+        return [text]
+
+    # Dividir el reporte en dos partes
+    partes = text.split(marcador, 1)
+
+    cliente1 = partes[0]
+
+    # Volvemos a agregar el encabezado para que las funciones sigan funcionando
+    cliente2 = marcador + partes[1]
+
+    return [cliente1, cliente2]
+
+# ============================================
 # PROCESAR PDF
 # ============================================
 
@@ -139,13 +161,20 @@ def process_pdf(pdf_path):
 
     texto = extract_text(pdf_path)
 
-    return {
+    clientes = separar_clientes(texto)
 
-        "nombre": extract_name(texto),
+    resultados = []
 
-        "score": extract_score(texto),
+    for cliente in clientes:
 
-        "gastos": extract_gastos(texto)
+        resultados.append({
 
-    }
+            "nombre": extract_name(cliente),
 
+            "score": extract_score(cliente),
+
+            "gastos": extract_gastos(cliente)
+
+        })
+
+    return resultados
