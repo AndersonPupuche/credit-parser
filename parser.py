@@ -101,8 +101,8 @@ def extract_gastos(text):
         # Extraer el pago mensual
         valor = None
 
-        # Formato: 013M150
-        pago = re.search(r"\d{3}M(\d+)", termino)
+        # Formato: uno o más dígitos + cualquier letra + monto
+        pago = re.search(r"\d+[A-Z](\d+)", termino)
 
         if pago:
             valor = int(pago.group(1))
@@ -114,11 +114,18 @@ def extract_gastos(text):
             if pago:
                 valor = int(pago.group(1))
 
+            else:
+                # Formato: M441, C250, A180, etc.
+                pago = re.search(r"^[A-Z](\d+)$", termino)
+
+                if pago:
+                    valor = int(pago.group(1))
+
         if valor is not None:
 
-            total += valor
+             total += valor
 
-            print(f"Pago encontrado: {valor}")
+             print(f"Pago encontrado: {valor}")
 
     print("TOTAL =", total)
 
