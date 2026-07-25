@@ -2,7 +2,8 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Aquaworld Systems - Credit Report Parser</title>
+    <title>Consulta Creditos - Aquaworld Systems/title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 
     <style>
 
@@ -114,6 +115,36 @@
 
         }
 
+        /*Barra  de Nivel de riesgo*/
+
+        .barra-riesgo{
+            width:100%;
+            height:14px;
+            background:#ddd;
+            border-radius:10px;
+            overflow:hidden;
+            margin-top:5px;
+        }
+
+        .progreso{
+            height:100%;
+            transition:.4s;
+        }
+
+        .bajo{
+            width:100%;
+            background:#2e7d32;
+        }
+
+        .medio{
+            width:60%;
+            background:#f9a825;
+        }
+
+        .alto{
+            width:25%;
+            background:#c62828;
+        }
     </style>
 
 </head>
@@ -122,7 +153,7 @@
 
 <div class="container">
 
-    <img src="https://i.postimg.cc/4yzjQP2C/aquaworldsystem.png"
+    <img src="https://i.ibb.co/0pDvPK0m/aquaworldsystem.png"
          style="width:40%;">
 
     <h2>Subir reporte de crédito TransUnion (PDF)</h2>
@@ -153,7 +184,7 @@
 
     {% endif %}
 
-    
+
      {% if clientes %}
 
     <div style="display:flex; gap:20px; justify-content:center; flex-wrap:wrap; margin-top:25px;">
@@ -183,14 +214,60 @@
             {{ cliente.gastos }}
         </p>
 
+        <p>
+            <b>Límite total de crédito:</b><br>
+            ${{ "{:,.0f}".format(cliente.limite_credito) }}
+        </p>
+
+        <p>
+            <b>Cuentas abiertas:</b><br>
+            {{ cliente.cuentas_abiertas }}
+        </p>
+
+        <p>
+            <b>Colecciones:</b><br>
+            {{ cliente.collections }}
+        </p>
+
+        <p>
+            <b>Charge Offs:</b><br>
+            {{ cliente.charge_offs }}
+        </p>
+
+        <p>
+            <b>Disputas:</b><br>
+            {{ cliente.disputes }}
+        </p>
+
+        <p>
+            <b>Consultas al historial crediticio (2026):</b><br>
+            {{ cliente.inquiries }}
+        </p>
+
+        <p>
+            <b>Nivel de riesgo crediticio:</b><br>
+
+            {% if cliente.riesgo == "Bajo" %}
+                🟢 {{ cliente.riesgo }}
+            {% elif cliente.riesgo == "Medio" %}
+                🟡 {{ cliente.riesgo }}
+            {% else %}
+                🔴 {{ cliente.riesgo }}
+            {% endif %}
+        </p>
+        
+        <div class="barra-riesgo">
+        <div class="progreso {{ cliente.riesgo | lower | replace(' ', '-') }}"></div>
+        </div>
+
     </div>
 
     {% endfor %}
 
     </div>
 
-    {% endif %} 
-    
+    {% endif %}   
+
 
     <footer>
 
@@ -199,6 +276,7 @@
     </footer>
 
 </div>
+
 
 </body>
 </html>
