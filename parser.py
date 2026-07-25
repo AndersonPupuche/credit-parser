@@ -72,7 +72,7 @@ def extract_gastos(text):
     total = 0
 
     # Dividir por cada cuenta
-    cuentas = re.split(r'(?=[A-Z0-9/ ]+\s+\([A-Z]\s+[A-Z0-9]+\)\s+Account #)', text)
+    cuentas = re.split(r'(?=[A-Z0-9/&.,\'\- ]+\s+\([A-Z]\s+[A-Z0-9]+\)\s+Account #)',text)
 
     for cuenta in cuentas:
 
