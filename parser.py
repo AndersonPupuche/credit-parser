@@ -61,27 +61,6 @@ def extract_score(text):
     return 0
 
 # ============================================
-# NIVEL DE RIESGO
-# ============================================
-
-def extract_riesgo(score):
-
-    if score >= 800:
-        return "Excelente"
-
-    elif score >= 740:
-        return "Muy Bueno"
-
-    elif score >= 670:
-        return "Bueno"
-
-    elif score >= 580:
-        return "Medio"
-
-    else:
-        return "Alto"
-
-# ============================================
 # EXTRAER GASTOS MENSUALES
 # ============================================
 
@@ -370,30 +349,40 @@ def calcular_riesgo(score, max_credit, cuentas_abiertas,
 
     puntos = 0
 
-    if score >= 670:
+    # SCORE (máximo 2 puntos)
+    if score >= 740:
+        puntos += 2
+    elif score >= 670:
         puntos += 1
 
-    if max_credit >= 9500:
+    # MAYOR CRÉDITO OTORGADO (1 punto)
+    if max_credit >= 10000:
         puntos += 1
 
+    # CUENTAS ABIERTAS (1 punto)
     if cuentas_abiertas >= 3:
         puntos += 1
 
-    if charge_offs <= 2:
+    # CHARGE OFFS (2 puntos)
+    if charge_offs == 0:
+        puntos += 2
+    elif charge_offs <= 2:
         puntos += 1
 
-    if collections <= 2:
+    # COLLECTIONS (2 puntos)
+    if collections == 0:
+        puntos += 2
+    elif collections <= 2:
         puntos += 1
 
+    # DISPUTAS (1 punto)
     if disputas <= 2:
         puntos += 1
 
-    if puntos == 6:
+    if puntos >= 8:
         return "Bajo"
-
-    elif puntos >= 4:
+    elif puntos >= 5:
         return "Medio"
-
     else:
         return "Alto"
 
