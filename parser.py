@@ -28,16 +28,15 @@ def extract_text(pdf_path):
 
 def extract_name(text):
 
-    # Buscar el nombre principal
     patron = re.search(
-        r'Name:\s*([A-Z]+),\s*([A-Z ]+)',
-        text
+        r'Name:\s*([A-Z\' -]+)\s*,\s*([A-Z\' -]+)',
+        text,
+        re.MULTILINE
     )
 
     if patron:
 
         apellido = patron.group(1).title().strip()
-
         nombre = patron.group(2).title().strip()
 
         return f"{nombre} {apellido}"
