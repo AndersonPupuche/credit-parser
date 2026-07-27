@@ -198,18 +198,16 @@ def extract_collections(text):
     # 1. Contar las cuentas dentro de COLLECTIONS
     # ==========================================
 
-    match = re.search(
-        r'COLLECTIONS(.*?)(?:TRADES|INQUIRIES|PUBLIC RECORDS|$)',
+    secciones = re.findall(
+        r'COLLECTIONS(.*?)(?=COLLECTIONS|TRADES|INQUIRIES|PUBLIC RECORDS|$)',
         text,
         re.DOTALL | re.IGNORECASE
     )
 
-    if match:
-
-        seccion = match.group(1)
+    for seccion in secciones:
 
         total += len(re.findall(
-            r'ACCOUNT\s*#',
+            r'Account\s*#',
             seccion,
             re.IGNORECASE
         ))
@@ -233,8 +231,6 @@ def extract_collections(text):
             or "REMARKS: COLLECTION" in cuenta_mayus
         ):
 
-            # Si esta cuenta ya pertenece a la sección COLLECTIONS,
-            # no volver a contarla.
             if "PLACED FOR COLLECTION" in cuenta_mayus:
                 continue
 
