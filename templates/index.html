@@ -145,6 +145,60 @@
             width:25%;
             background:#c62828;
         }
+
+        /* Selector de PDF*/
+        .drop-area{
+            border:3px dashed #0d6efd;
+            border-radius:15px;
+            padding:40px;
+            text-align:center;
+            cursor:pointer;
+            transition:.3s;
+            background:#f8fbff;
+
+        }
+
+        .drop-area:hover{
+
+            background:#eef7ff;
+
+        }
+
+        .drop-area.active{
+
+            background:#dff2ff;
+            border-color:#198754;
+
+        }
+
+        .icon{
+
+            font-size:60px;
+            margin-bottom:10px;
+
+        }
+
+        .drop-content h3{
+
+            margin:10px 0;
+            color:#0d6efd;
+
+        }
+
+        .drop-content p{
+
+            color:#555;
+
+        }
+
+        #file-name{
+
+            display:block;
+            margin-top:15px;
+            font-weight:bold;
+            color:#198754;
+
+        }
     </style>
 
 </head>
@@ -160,11 +214,28 @@
 
     <form method="POST" enctype="multipart/form-data">
 
-        <input
-            type="file"
-            name="pdf"
-            accept=".pdf"
-            required>
+        <div class="drop-area" id="drop-area">
+
+            <input
+                type="file"
+                id="pdf"
+                name="pdf"
+                accept=".pdf"
+                hidden
+                required
+            >
+
+        <div class="drop-content">
+            <div class="icon">📄</div>
+                <h3>Arrastra tu reporte aquí</h3>
+                <p>o haz clic para seleccionar un archivo PDF</p>
+
+                <span id="file-name">
+                    Ningún archivo seleccionado
+                </span>
+
+            </div>
+        </div> 
 
         <br>
 
@@ -277,6 +348,63 @@
 
 </div>
 
+<script>
 
+    const dropArea = document.getElementById("drop-area");
+    const input = document.getElementById("pdf");
+    const fileName = document.getElementById("file-name");
+
+    // Abrir explorador
+    dropArea.addEventListener("click", () => {
+
+        input.click();
+
+    });
+
+    // Mostrar nombre al seleccionar
+    input.addEventListener("change", () => {
+
+        if(input.files.length){
+
+            fileName.textContent = "✅ " + input.files[0].name;
+
+        }
+
+    });
+
+    // Arrastrar encima
+    dropArea.addEventListener("dragover",(e)=>{
+
+        e.preventDefault();
+
+        dropArea.classList.add("active");
+
+    });
+
+    // Salir
+    dropArea.addEventListener("dragleave",()=>{
+
+        dropArea.classList.remove("active");
+
+    });
+
+    // Soltar archivo
+    dropArea.addEventListener("drop",(e)=>{
+
+        e.preventDefault();
+
+        dropArea.classList.remove("active");
+
+        input.files = e.dataTransfer.files;
+
+        if(input.files.length){
+
+            fileName.textContent="✅ "+input.files[0].name;
+
+        }
+
+    });
+
+</script>
 </body>
 </html>
