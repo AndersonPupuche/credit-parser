@@ -365,7 +365,7 @@ def extract_current_year_inquiries(text):
 # ============================================
 
 
-def calcular_riesgo(score, limite_credito, cuentas_abiertas,
+def calcular_riesgo(score, max_credit, cuentas_abiertas,
                     charge_offs, collections, disputas):
 
     puntos = 0
@@ -373,7 +373,7 @@ def calcular_riesgo(score, limite_credito, cuentas_abiertas,
     if score >= 670:
         puntos += 1
 
-    if limite_credito >= 9500:
+    if max_credit >= 9500:
         puntos += 1
 
     if cuentas_abiertas >= 3:
@@ -399,63 +399,44 @@ def calcular_riesgo(score, limite_credito, cuentas_abiertas,
 
 
 # ============================================
-# EXTRAER LIMITE TOTAL DE CREDITO
+# EXTRAER MAYOR MONTO DE CREDITO
 # ============================================
 
-def extract_credit_limit(text):
+import re
 
-    total = 0
+def extract_max_credit(text):
 
-    cuentas = re.split(
-        r'(?=[A-Z0-9/&.,\'\- ]+\s+\([A-Z]\s+[A-Z0-9]+\)\s+Account #)',
-        text
-    )
+    max_credit = 0
+
+    cuentas = re.split(r'Account #', text)
 
     for cuenta in cuentas:
 
-        cuenta_mayus = cuenta.upper()
-
-        # Ignorar Collections
-        if "ORIGINAL CREDITOR:" in cuenta_mayus:
-            continue
-
-        # Ignorar cuentas cerradas
-        if re.search(r'CLOSED:\s*\d{1,2}/\d{2,4}', cuenta_mayus):
-            continue
-
-        if (
-            "CLOSED BY CREDIT GRANTOR" in cuenta_mayus
-            or "ACCOUNT CLOSED DUE TO REFINANCE" in cuenta_mayus
-            or "ACCOUNT CLOSED DUE TO TRANSFER" in cuenta_mayus
-            or "ACCOUNT CLOSED BY CONSUMER" in cuenta_mayus
-            or "TRANSFERRED TO ANOTHER LENDER" in cuenta_mayus
-            or "PAID IN FULL" in cuenta_mayus
-            or "INACTIVE ACCOUNT" in cuenta_mayus
-            or "PURCHASED BY ANOTHER LENDER" in cuenta_mayus
-            or "UNPAID BALANCE CHARGED OFF" in cuenta_mayus
-        ):
-            continue
-
-        # Primero buscar Credit Limit
-        match = re.search(
-            r'CREDIT LIMIT:\s*\$?([\d,]+)',
-            cuenta,
-            re.IGNORECASE
+        # Buscar Credit Limit
+        patron = re.search(
+            r'Credit Limit:\s*\$?([\d,]+)',
+            cuenta
         )
 
-        # Si no existe Credit Limit, buscar High Credit
-        if not match:
-            match = re.search(
-                r'HIGH CREDIT:\s*\$?([\d,]+)',
-                cuenta,
-                re.IGNORECASE
+        if patron:
+            monto = int(patron.group(1).replace(",", ""))
+
+        else:
+            # Si no existe Credit Limit, usar High Credit
+            patron = re.search(
+                r'High Credit:\s*\$?([\d,]+)',
+                cuenta
             )
 
-        if match:
-            limite = int(match.group(1).replace(",", ""))
-            total += limite
+            if not patron:
+                continue
 
-    return total
+            monto = int(patron.group(1).replace(",", ""))
+
+        if monto > max_credit:
+            max_credit = monto
+
+    return max_credit
 
 
 # ============================================
@@ -495,8 +476,7 @@ def process_pdf(pdf_path):
     for cliente in clientes:
 
         score = extract_score(cliente)
-
-        limite_credito = extract_credit_limit(cliente)
+        max_credit = extract_max_credit(cliente)
         cuentas_abiertas = extract_open_accounts(cliente)
         charge_offs = extract_charge_offs(cliente)
         collections = extract_collections(cliente)
@@ -510,7 +490,7 @@ def process_pdf(pdf_path):
 
             "riesgo": calcular_riesgo(
                 score,
-                limite_credito,
+                max_credit,
                 cuentas_abiertas,
                 charge_offs,
                 collections,
@@ -519,15 +499,15 @@ def process_pdf(pdf_path):
 
             "gastos": extract_gastos(cliente),
 
-            "limite_credito": limite_credito,
+            "max_credit": extract_max_credit(cliente),
 
-            "cuentas_abiertas": extract_open_accounts(cliente),
+            "cuentas_abiertas": cuentas_abiertas,
 
-            "collections": extract_collections(cliente),
+            "collections": collections,
 
-            "charge_offs": extract_charge_offs(cliente),
+            "charge_offs": charge_offs,
 
-            "disputes": extract_disputes(cliente),
+            "disputes": disputas,
 
             "inquiries": extract_current_year_inquiries(cliente)
 
