@@ -2,8 +2,8 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <meta charset="utf-8">
     <title>Aquaworld Systems - Credit Report Parser</title>
+    
 
     <style>
 
@@ -214,10 +214,10 @@
             {{ cliente.gastos }}
         </p>
 
-        <p>
-            <b>Límite total de crédito:</b><br>
-            ${{ "{:,.0f}".format(cliente.limite_credito) }}
-        </p>
+       <p>
+            <b>Mayor crédito otorgado:</b><br>
+            ${{ "{:,.0f}".format(cliente.max_credit) }}
+       </p>
 
         <p>
             <b>Cuentas abiertas:</b><br>
