@@ -229,10 +229,11 @@ def extract_collections(text):
             "TYPE: COLLECTION" in cuenta_mayus
             or "LOAN TYPE: COLLECTION" in cuenta_mayus
             or "REMARKS: COLLECTION" in cuenta_mayus
+            or "REMARKS: PLACED FOR COLLECTION" in cuenta_mayus
         ):
 
-            if "PLACED FOR COLLECTION" in cuenta_mayus:
-                continue
+            #if "PLACED FOR COLLECTION" in cuenta_mayus:
+                #continue
 
             total += 1
 
